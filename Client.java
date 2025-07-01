@@ -5,7 +5,7 @@ import java.util.Scanner;
 
 public class Client {
     public static void main(String[] args) {
-        String host = "10.10.55.85";
+        String host = "3.107.76.29";
         int port = 12345;
 
         Socket socket = null;
