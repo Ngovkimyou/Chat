@@ -153,6 +153,22 @@ public class Server {
             this.socket = socket;
         }
 
+        public void showAllRooms() {
+            synchronized (rooms) {  // Add thread safety
+                if (rooms.isEmpty()) {
+                    out.println("No rooms available.");
+                } else {
+                    out.println("Available Rooms:");
+                    for (Map.Entry<String, ChatRoom> entry : rooms.entrySet()) {
+                        String name = entry.getKey();
+                        int memberCount = entry.getValue().members.size();
+                        out.println("- " + name + " (" + memberCount + " members)");
+                    }
+                }
+            }
+            out.flush();
+        }
+
         // Run
         public void run() {
             try {
@@ -183,9 +199,20 @@ public class Server {
 
                     String option = in.readLine();
 
-                    if ("1".equals(option)) {
-                        out.println("Enter room name:");
+                   if ("1".equals(option)) {
+                        showAllRooms();
+                        // First show rooms and verify there are rooms available
+                        if (rooms.isEmpty()) {
+                            out.println("No rooms exist. Please create one first.");
+                            continue;  // Go back to main menu
+                        }
+                        
+                        out.println("Enter room name (or /back to cancel):");
                         String roomName = in.readLine();
+                        
+                        if ("/back".equalsIgnoreCase(roomName)) {
+                            continue;  // Return to main menu
+                        }
 
                         synchronized (rooms) {
                             ChatRoom room = rooms.get(roomName);
