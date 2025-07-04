@@ -6,6 +6,9 @@ import java.util.*;
 public class Server {
     // Stores all connected users
     private static Map<String, ClientHandler> clients = new HashMap<>();
+    // Stores passwords for users
+    private static Map<String, String> userPasswords = new HashMap<>();
+
 
     // Stores all rooms by name
     private static Map<String, ChatRoom> rooms = new HashMap<>();
@@ -175,19 +178,50 @@ public class Server {
                 in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 out = new PrintWriter(socket.getOutputStream(), true);
 
-                // Get username
-                out.println("Enter your username:");
-                username = in.readLine();
+                // Login / Register
+                while (true) {
+                    out.println("Enter your username:");
+                    username = in.readLine();
 
-                // Register user
-                synchronized (clients) {
-                    if (clients.containsKey(username)) {
-                        out.println("Username already in use. Connection closing.");
-                        socket.close();
-                        return;
+                    if (username == null || username.trim().isEmpty()) {
+                        out.println("Invalid username.");
+                        continue;
                     }
-                    clients.put(username, this);
+
+                    synchronized (userPasswords) {
+                        if (userPasswords.containsKey(username)) {
+                            out.println("Username exists. Enter your password:");
+                            String enteredPassword = in.readLine();
+                            if (!userPasswords.get(username).equals(enteredPassword)) {
+                                out.println("Wrong password. Try again.\n");
+                                continue;
+                            }
+                        } else {
+                            out.println("New user. Set your password:");
+                            String newPassword = in.readLine();
+                            if (newPassword == null || newPassword.trim().isEmpty()) {
+                                out.println("Password cannot be empty.");
+                                continue;
+                            }
+                            userPasswords.put(username, newPassword);
+                            out.println("User registered successfully.");
+                        }
+                    }
+
+                    // Check if user is already connected
+                    synchronized (clients) {
+                        if (clients.containsKey(username)) {
+                            out.println("User already logged in. Connection closing.");
+                            socket.close();
+                            return;
+                        }
+                        clients.put(username, this);
+                    }
+
+                    out.println("Login successful. Welcome, " + username + "!");
+                    break;
                 }
+
 
                 // Options
                 while (true) {

@@ -20,12 +20,38 @@ public class Client {
             System.out.println("Connected to chat server.");
             scanner = new Scanner(System.in);
 
-            // Setup input stream for receiving messages
+            // Setup input/output streams
             InputStream is = socket.getInputStream();
             BufferedReader in = new BufferedReader(new InputStreamReader(is));
-
-            // Setup output stream for sending messages
             out = new PrintWriter(socket.getOutputStream(), true);
+
+            // === LOGIN FLOW ===
+            // Wait for server to ask for username
+            String usernamePrompt = in.readLine();
+            System.out.println(usernamePrompt);
+            String username = scanner.nextLine();
+            out.println(username);
+
+            // Now wait for server to ask for password or new registration
+            String passwordPrompt = in.readLine();
+            System.out.println(passwordPrompt);
+            String password = scanner.nextLine();
+            out.println(password);
+
+            // Receive one or two lines of response
+            String line1 = in.readLine();
+            System.out.println(line1);
+
+            // Some servers will send a second line (login successful)
+            if (!line1.toLowerCase().contains("successful")) {
+                String line2 = in.readLine();
+                System.out.println(line2);
+
+                if (!line2.toLowerCase().contains("successful")) {
+                    System.out.println("Login failed. Exiting client.");
+                    return;
+                }
+            }
 
             // Reader thread: listens for messages from server
             readerThread = new Thread(() -> {
