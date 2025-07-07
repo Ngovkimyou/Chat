@@ -18,6 +18,10 @@ public class Server {
         String roomName;
         String password;
         Set<ClientHandler> members = new HashSet<>();
+        
+        // 2D array for chat history: [messageIndex][0] = username, [messageIndex][1] = message
+        String[][] messageHistory = new String[100][2];
+        int messageCount = 0; // Tracks how many messages are stored
 
         ChatRoom(String name, String password) {
             this.roomName = name;
@@ -25,11 +29,54 @@ public class Server {
         }
 
         void broadcast(String message, ClientHandler sender) {
+            // Add message to history (automatically removes oldest if full)
+            addToHistory(sender.username, message);
+            
+            // Broadcast to other members
             for (ClientHandler member : members) {
                 if (member != sender) {
-                    member.out.println(message);
+                    member.out.println("[" + sender.username + "]: " + message);
                 }
             }
+        }
+
+        // New method to send history to a specific client
+        public void sendHistoryToNewMember(ClientHandler newMember) {
+            if (messageCount > 0) {
+                newMember.out.println("\n=== Room History ===");
+                for (int i = 0; i < messageCount; i++) {
+                    newMember.out.println("[" + messageHistory[i][0] + "]: " + messageHistory[i][1]);
+                }
+                newMember.out.println("===================");
+                newMember.out.flush();
+            }
+        }
+
+        private void addToHistory(String username, String message) {
+            // If history is full, shift all messages left (removing oldest)
+            if (messageCount >= 100) {
+                System.arraycopy(messageHistory, 1, messageHistory, 0, 99);
+                messageCount--;
+            }
+            
+            // Add new message at the end
+            messageHistory[messageCount][0] = username;
+            messageHistory[messageCount][1] = message;
+            messageCount++;
+        }
+
+        public String getFormattedHistory() {
+            StringBuilder history = new StringBuilder();
+            history.append("\n=== Last ").append(messageCount).append(" messages ===\n");
+            
+            for (int i = 0; i < messageCount; i++) {
+                history.append("[").append(messageHistory[i][0])
+                    .append("]: ").append(messageHistory[i][1])
+                    .append("\n");
+            }
+            
+            history.append("=======================");
+            return history.toString();
         }
     }
 
@@ -233,19 +280,18 @@ public class Server {
 
                     String option = in.readLine();
 
-                   if ("1".equals(option)) {
+                    if ("1".equals(option)) {
                         showAllRooms();
-                        // First show rooms and verify there are rooms available
                         if (rooms.isEmpty()) {
                             out.println("No rooms exist. Please create one first.");
-                            continue;  // Go back to main menu
+                            continue;
                         }
                         
                         out.println("Enter room name (or /back to cancel):");
                         String roomName = in.readLine();
                         
                         if ("/back".equalsIgnoreCase(roomName)) {
-                            continue;  // Return to main menu
+                            continue;
                         }
 
                         synchronized (rooms) {
@@ -266,6 +312,11 @@ public class Server {
                             room.members.add(this);
                             currentRoom = room;
                             out.println("Joined room: " + roomName);
+                            
+                            // Send history to new member
+                            room.sendHistoryToNewMember(this);
+                            
+                            // Notify others
                             room.broadcast(username + " joined the room.", this);
                             break;
                         }
