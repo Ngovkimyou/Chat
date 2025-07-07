@@ -5,13 +5,13 @@ import java.util.*;
 
 public class Server {
     // Stores all connected users
-    private static Map<String, ClientHandler> clients = new HashMap<>();
+    private final static Map<String, ClientHandler> clients = new HashMap<>();
     // Stores passwords for users
-    private static Map<String, String> userPasswords = new HashMap<>();
+    private final static Map<String, String> userPasswords = new HashMap<>();
 
 
     // Stores all rooms by name
-    private static Map<String, ChatRoom> rooms = new HashMap<>();
+    private final static Map<String, ChatRoom> rooms = new HashMap<>();
 
     // ChatRoom structure
     static class ChatRoom {
@@ -35,7 +35,11 @@ public class Server {
             // Broadcast to other members
             for (ClientHandler member : members) {
                 if (member != sender) {
-                    member.out.println("[" + sender.username + "]: " + message);
+                    if (message.endsWith("joined the room.") || message.endsWith("left the room.")) {
+                        member.out.println(sender.username + " " + message);
+                    } else {
+                        member.out.println("[" + sender.username + "]: " + message);
+                    }
                 }
             }
         }
@@ -45,7 +49,7 @@ public class Server {
             if (messageCount > 0) {
                 newMember.out.println("\n=== Room History ===");
                 for (int i = 0; i < messageCount; i++) {
-                    newMember.out.println("[" + messageHistory[i][0] + "]: " + messageHistory[i][1]);
+                    newMember.out.println("["+ messageHistory[i][0] +"] : " + messageHistory[i][1]);
                 }
                 newMember.out.println("===================");
                 newMember.out.flush();
@@ -99,12 +103,12 @@ public class Server {
 
     // Handles each client
     static class ClientHandler implements Runnable {
-        private Socket socket;
+        private final Socket socket;
         private BufferedReader in;
         private PrintWriter out;
         private String username;
         private ChatRoom currentRoom = null;
-        private Set<String> friends = new HashSet<>();
+        private final Set<String> friends = new HashSet<>();
         private String privateTarget = null;
 
         private void handleFriendMenu() throws IOException {
@@ -317,7 +321,7 @@ public class Server {
                             room.sendHistoryToNewMember(this);
                             
                             // Notify others
-                            room.broadcast(username + " joined the room.", this);
+                            room.broadcast("joined the room.", this);
                             break;
                         }
                     } else if ("2".equals(option)) {
@@ -356,7 +360,7 @@ public class Server {
 
                     // Room chat
                     if (currentRoom != null) {
-                        currentRoom.broadcast(username + ": " + msg, this);
+                        currentRoom.broadcast(msg, this);
                     }              
                 }
 
@@ -377,7 +381,7 @@ public class Server {
                 if (currentRoom != null) {
                     synchronized (rooms) {
                         currentRoom.members.remove(this);
-                        currentRoom.broadcast(username + " left the room.", this);
+                        currentRoom.broadcast("left the room.", this);
                     }
                 }
 
