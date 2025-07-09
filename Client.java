@@ -77,7 +77,7 @@ public class Client {
             }
 
            // No need to read another line — we already got the "successful" message during password loop
-            System.out.println("Proceeding to main menu...");
+            System.out.println("Proceeding to main menu...\n");
 
             // Start background thread to receive messages
             // Make sure `in` is not reassigned after this point

@@ -197,7 +197,7 @@ public class Server {
                 } else if ("4".equals(input)) {
                     break;
                 } else {
-                    out.println("Invalid option.");
+                    out.println("Invalid option.\n");
                 }
             }
         }
@@ -212,7 +212,7 @@ public class Server {
                 if (rooms.isEmpty()) {
                     out.println("No rooms available.");
                 } else {
-                    out.println("Available Rooms:");
+                    out.println("\nAvailable Rooms:");
                     for (Map.Entry<String, ChatRoom> entry : rooms.entrySet()) {
                         String name = entry.getKey();
                         int memberCount = entry.getValue().members.size();
@@ -307,7 +307,7 @@ public class Server {
                     if ("1".equals(option)) {
                         showAllRooms();
                         if (rooms.isEmpty()) {
-                            out.println("No rooms exist. Please create one first.");
+                            out.println(" Please create one first.");
                             continue;
                         }
                         
@@ -341,7 +341,7 @@ public class Server {
                             room.sendHistoryToNewMember(this);
                             
                             // Notify others
-                            room.broadcast("joined the room.", this);
+                            room.broadcast("joined the room.\n", this);
                             break;
                         }
                     } else if ("2".equals(option)) {
@@ -361,7 +361,7 @@ public class Server {
                             rooms.put(roomName, room);
                             room.members.add(this);
                             currentRoom = room;
-                            out.println("Room created. You joined: " + roomName);
+                            out.println("\nRoom created. You joined: " + roomName);
                             break;
                         }
                     } else if ("3".equals(option)) {
