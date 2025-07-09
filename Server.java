@@ -143,7 +143,7 @@ public class Server {
                 out.println("2. Add friend");
                 out.println("3. Message a friend");
                 out.println("4. Back to main menu");
-                out.println("Enter: ");
+                out.println("Enter:");
 
                 String input = in.readLine();
                 if ("1".equals(input)) {
@@ -232,55 +232,75 @@ public class Server {
                 // Login / Register
                 while (true) {
                     out.println("Enter your username:");
-                    username = in.readLine();
-
-                    if (username == null || username.trim().isEmpty()) {
-                        out.println("Invalid username.");
-                        continue;
+                    String enteredUsername = null;
+                    while (true) {
+                        enteredUsername = in.readLine();
+                        if (enteredUsername != null && !enteredUsername.trim().isEmpty()) {
+                            break;
+                        }
+                        out.println("Invalid username. Please enter a valid username: ");
                     }
+                    username = enteredUsername;
 
                     synchronized (userPasswords) {
                         if (userPasswords.containsKey(username)) {
-                            out.println("Username exists. Enter your password:");
-                            String enteredPassword = in.readLine();
-                            if (!userPasswords.get(username).equals(enteredPassword)) {
-                                out.println("Wrong password. Try again.\n");
-                                continue;
+                            String correctPassword = userPasswords.get(username);
+                            boolean authenticated = false;
+
+                            while (!authenticated) {
+                                out.println("Username exists. Enter your password:");
+                                String enteredPassword = in.readLine();
+
+                                if (enteredPassword != null && enteredPassword.trim().equals(correctPassword)) {
+                                    authenticated = true;
+                                } else {
+                                    out.println("Wrong password. Try again.");
+                                }
                             }
                         } else {
-                            out.println("New user. Set your password:");
-                            String newPassword = in.readLine();
-                            if (newPassword == null || newPassword.trim().isEmpty()) {
-                                out.println("Password cannot be empty.");
-                                continue;
+                            String newPassword = null;
+                            while (true) {
+                                out.println("New user. Set your password:");
+                                newPassword = in.readLine();
+                                if (newPassword != null && !newPassword.trim().isEmpty()) {
+                                    break;
+                                }
+                                out.println("Password cannot be empty. Please enter a valid password:");
                             }
                             userPasswords.put(username, newPassword);
                             out.println("User registered successfully.");
                         }
                     }
-
                     // Check if user is already connected
-                    synchronized (clients) {
-                        if (clients.containsKey(username)) {
-                            out.println("User already logged in. Connection closing.");
-                            socket.close();
-                            return;
+                    boolean addedToClients = false;
+                    try {
+                        synchronized (clients) {
+                            if (clients.containsKey(username)) {
+                                out.println("User already logged in. Connection closing.");
+                                socket.close();
+                                return;
+                            }
+                            clients.put(username, this);
+                            addedToClients = true;
                         }
-                        clients.put(username, this);
+                    } catch (Exception e) {
+                        if (addedToClients) {
+                            synchronized (clients) {
+                                clients.remove(username);
+                            }
+                        }
+                        throw e; // rethrow
                     }
-
                     out.println("Login successful. Welcome, " + username + "!");
                     break;
                 }
-
-
                 // Options
                 while (true) {
                     out.println("Do you want to:");
                     out.println("1. Join a Room");
                     out.println("2. Create a Room");
                     out.println("3. Friend Menu");
-                    out.println("Enter: ");
+                    out.println("Enter:");
 
                     String option = in.readLine();
 
